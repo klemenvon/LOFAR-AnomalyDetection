@@ -1,0 +1,47 @@
+models:
+  base:
+    _target_: src.model.basic_ae.Conv2DAutoEncoder
+    encoder:
+      _target_: src.model.encoders_decoders.EncoderShallow
+      filters:
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      input_dim: ${preproc.channels}
+    decoder:
+      _target_: src.model.encoders_decoders.DecoderShallow
+      filters:
+      - 512
+      - 256
+      - 128
+      - 64
+      - 32
+      output_dim: ${preproc.channels}
+    latent: 256
+    loss_scaling:
+      mse: 1.0
+project_name: lofar-ml
+common:
+  data_dir: C:/LOFAR/subset/
+  device: cuda:0
+  gpus: 1
+data:
+  data_dir: ${common.data_dir}
+  device: ${common.device}
+preproc:
+  mode: patch
+  size: (128,128)
+  channels: 4
+  device: ${common.device}
+loader:
+  batch_size: 96
+  shuffle: true
+checkpoint:
+  monitor: val_loss
+  dirpath: models/checkpoints/
+  filename: model_{epoch:03d}_{loss:.4f}_{val_loss:.4f}
+  save_top_k: 4
+  mode: min
+model: ${models.base}
