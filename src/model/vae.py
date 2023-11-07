@@ -5,7 +5,7 @@ from torch.nn.functional import MSELoss
 
 from .base_module import TorchModule
 
-class BasicBottleneck(nn.Module):
+class VAEBottleneck(nn.Module):
     def __init__(self, in_units: int, out_units: int, latent: int, activation: nn.Module = nn.ReLU()):
         """
         A basic bottleneck layer for a convolutional autoencoder.
@@ -14,26 +14,30 @@ class BasicBottleneck(nn.Module):
         """
         super().__init__()
         # Print the arguments
-        self.bottleneck_in = nn.Sequential(
-            nn.Linear(in_units, latent),
-            nn.BatchNorm2d(latent),
-            activation,
-        )
+        self.fc_var = nn.Linear(in_units, latent)
+        self.fc_mu = nn.Linear(in_units, latent)
         self.bottleneck_out = nn.Sequential(
             nn.Linear(latent, out_units),
             nn.BatchNorm2d(out_units),
             activation,
         )
+    
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
 
     def forward(self,x,loss_dict):
         # Returns (latent, bottleneck_out)
         # Loss dict remains unchanged because we don't have any losses here
-        z = self.bottleneck_in(x)
+        mu = self.fc_mu(x)
+        logvar = self.fc_var(x)
+        z = self.reparameterize(mu, logvar)
         x_hat = self.bottleneck_out(z)
-        return z, x_hat
+        return x_hat, mu, logvar
 
 
-class Conv2DAutoEncoder(TorchModule):
+class VAE(TorchModule):
     def __init__(
             self,
             encoder: nn.Module,
@@ -45,14 +49,14 @@ class Conv2DAutoEncoder(TorchModule):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.bottleneck = BasicBottleneck(encoder.output_units, decoder.input_units, latent, activation)
+        self.bottleneck = VAEBottleneck(encoder.output_units, decoder.input_units, latent, activation)
         self.loss_scaling = loss_scaling
 
     def forward(self,input):
         x = self.encoder(input)
-        latent, z = self.bottleneck(x)
+        z, mu, logvar = self.bottleneck(x)
         x_hat = self.decoder(z)
-        return input, latent, x_hat
+        return input, mu, logvar, x_hat
 
     def loss_function(self,*args,**kwargs):
         # returns the appropriate loss that we need to do backprop
@@ -63,3 +67,4 @@ class Conv2DAutoEncoder(TorchModule):
         loss_dict['loss'] = self._scale_loss(loss_dict)
         return loss_dict
   
+

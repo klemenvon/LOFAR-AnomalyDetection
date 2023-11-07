@@ -9,6 +9,7 @@ from hydra.utils import instantiate
 
 # Here is where I import my modules
 from src.data.loaders import LOFARDataModule
+from src.experiment import ExperimentBase
 
 def run_setup(config: DictConfig):
     """
@@ -34,6 +35,7 @@ def main(cfg: DictConfig):
     checkpoint_callback = ModelCheckpoint(**cfg.checkpoint)
 
     model = instantiate(cfg.model)
+    experiment = ExperimentBase(model,cfg)
     data = LOFARDataModule(cfg.data,cfg.preproc,cfg.loader)
 
     trainer = pl.Trainer(
@@ -42,7 +44,7 @@ def main(cfg: DictConfig):
         **cfg.trainer
     )
 
-    trainer.fit(model, data)
+    trainer.fit(experiment, data)
 
 if __name__ == "__main__":
     main()
