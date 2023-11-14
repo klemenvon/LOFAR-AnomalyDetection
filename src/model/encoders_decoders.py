@@ -177,3 +177,32 @@ class Conv2DDecoderShallow(nn.Module):
     def forward(self, x):
         x = x.view(-1, *self.input_shape)
         return self.decoder(x)
+
+class Encoder1DShallow(nn.Module):
+    def __init__(self, filters: List[int], input_dim: int = 4, activation: nn.Module = nn.ReLU()):
+        """
+        A Shallow 1D Convolutional Encoder.
+        :param filters: filters per layer for remaining layers
+        :param input_dim: input dimension
+        :param activation: layer activation
+        """
+        super().__init__()
+        kernels = [4,4,4,4,4]
+        strides = [4,4,4,4,4]
+        assert len(filters) == len(kernels), "Number of filters and kernels in Encoder must be equal"
+
+        enc = []
+        # Construct encoder by layer blocks
+        for fil,kern,stride in zip(filters,kernels,strides):
+            layer_list = []
+            layer_list.append(nn.Conv1d(input_dim, fil, kernel_size=kern,stride=stride,padding=1))
+            layer_list.append(nn.BatchNorm1d(fil))
+            layer_list.append(activation)
+            # Add to encoder
+            enc.append(nn.Sequential(*layer_list))
+            # Update input dimension
+            input_dim = fil
+        
+        self.encoder = nn.Sequential(*enc)
+        self.output_shape = (filters[-1],4)
+        self.output_units = reduce(lambda x,y: x*y, self.output_shape)

@@ -1,6 +1,8 @@
 # This is the base config for Hydra
-# defaults:
-  # - models: base
+defaults:
+  # - model: vanilla_ae
+  - model: swae
+
 project_name: 'lofar-ml'
 
 common:
@@ -33,23 +35,9 @@ checkpoint:
   save_top_k: 4
   mode: 'min'
 
-model:
-  _target_: "src.model.Conv2DAutoEncoder"
-  encoder:
-    _target_: "src.model.encoders_decoders.EncoderShallow"
-    filters: [32,64,128,256,512]
-    input_dim: ${preproc.channels}
-  decoder:
-    _target_: "src.model.encoders_decoders.DecoderShallow"
-    filters: [512,256,128,64,32]
-    output_dim: ${preproc.channels}
-  latent: 256
-  loss_scaling:
-    mse: 1.0
-
 trainer:
   max_epochs: 50
-  precision: 32
+  precision: 16
   accelerator: 'gpu'
 
 optimizer:
