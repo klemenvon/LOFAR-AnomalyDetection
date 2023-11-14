@@ -133,6 +133,13 @@ collate_fn = {
     'patch': collate_batch_patch,
 }
 
+def setup_collate(fn_name, device):
+  """
+  Sets up the collate function for the dataset.
+  Returns a callable that can be used with the DataLoader.
+  """
+  return partial(collate_fn[fn_name],mydevice=device)
+
 def update_collate(device):
     global collate_fn
     for name, func in collate_fn.items():

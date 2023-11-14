@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.nn.functional import interpolate
 import pytorch_lightning as pl
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 from .utils import *
 
@@ -29,8 +29,8 @@ class LOFARDataModule(pl.LightningDataModule):
         data_store = DataStore(**data_conf)
         self.full_data = LOFARDataset(data_store,preprocessor,uv=True)
         self.train_data, self.val_data, self.test_data = random_split(self.full_data,[0.8,0.1,0.1])
-        self.preprocessor = Preprocessor(**preproc_conf)
-        self.loader_conf = loader_conf
+        self.loader_conf = OmegaConf.to_container(loader_conf,resolve=False)
+        self.loader_conf['collate_fn'] = collate_fn[loader_conf.collate_fn]
 
     def train_dataloader(self):
         return DataLoader(self.train_data,**self.loader_conf)
@@ -117,7 +117,6 @@ class LOFARDataset(Dataset):
         bl_tup = self.dataset.bl_list[idx]
         if self.uv:
             baseline, uv = self.dataset.get_baseline(bl_tup,uv=self.uv)
-            log.info(f"Getting baseline {baseline.shape} with uv {uv.shape}.")
             baseline, uv = self.preproc(baseline,uv)
             return baseline,uv
         baseline = self.dataset.get_baseline(bl_tup,uv=self.uv)

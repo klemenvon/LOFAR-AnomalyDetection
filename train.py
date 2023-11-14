@@ -10,6 +10,7 @@ from hydra.utils import instantiate
 # Here is where I import my modules
 from src.data.loaders import LOFARDataModule
 from src.experiment import ExperimentBase
+from src.model import Conv2DAutoEncoder
 
 def run_setup(config: DictConfig):
     """
@@ -24,7 +25,7 @@ def run_setup(config: DictConfig):
     from src.data.utils import update_collate
     update_collate(config.preproc.device)
 
-@hydra.main(config_path="config", config_name="config")
+@hydra.main(config_path="config", config_name="config", version_base="1.1")
 def main(cfg: DictConfig):
     # Setup
     run_setup(cfg)

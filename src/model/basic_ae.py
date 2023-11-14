@@ -1,9 +1,11 @@
+import logging
 from typing import Dict
 import torch
 from torch import nn
-from torch.nn.functional import MSELoss
 
 from .base_module import TorchModule
+
+log = logging.getLogger(__name__)
 
 class BasicBottleneck(nn.Module):
     def __init__(self, in_units: int, out_units: int, latent: int, activation: nn.Module = nn.ReLU()):
@@ -16,16 +18,14 @@ class BasicBottleneck(nn.Module):
         # Print the arguments
         self.bottleneck_in = nn.Sequential(
             nn.Linear(in_units, latent),
-            nn.BatchNorm2d(latent),
             activation,
         )
         self.bottleneck_out = nn.Sequential(
             nn.Linear(latent, out_units),
-            nn.BatchNorm2d(out_units),
             activation,
         )
 
-    def forward(self,x,loss_dict):
+    def forward(self,x, **kwargs):
         # Returns (latent, bottleneck_out)
         # Loss dict remains unchanged because we don't have any losses here
         z = self.bottleneck_in(x)
@@ -50,14 +50,16 @@ class Conv2DAutoEncoder(TorchModule):
 
     def forward(self,input):
         x = self.encoder(input)
-        latent, z = self.bottleneck(x)
-        x_hat = self.decoder(z)
+        x_flat = torch.flatten(x,start_dim=1)
+        latent, z = self.bottleneck(x_flat)
+        z_shaped = torch.reshape(z,(-1,*self.decoder.input_shape))
+        x_hat = self.decoder(z_shaped)
         return input, latent, x_hat
 
     def loss_function(self,*args,**kwargs):
         # returns the appropriate loss that we need to do backprop
         input, latent, x_hat = args
-        mse_loss = MSELoss()
+        mse_loss = nn.MSELoss()
         loss_dict = {}
         loss_dict['mse_loss'] = mse_loss(input,x_hat)
         loss_dict['loss'] = self._scale_loss(loss_dict)

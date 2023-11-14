@@ -1,7 +1,10 @@
+import logging
 from functools import reduce
 from typing import List, Tuple
 import torch
 from torch import nn
+
+log = logging.getLogger(__name__)
 
 ### NOTE: All of this is built assuming an input size of 128x128
 # Encoders should return only the last layer of activation
@@ -28,9 +31,12 @@ class EncoderShallow(nn.Module):
             layer_list.append(nn.MaxPool2d(2))
             # Add to encoder
             enc.append(nn.Sequential(*layer_list))
+            # Update input dimension
+            input_dim = fil
         
         self.encoder = nn.Sequential(*enc)
-        self.output_shape = (16,16,filters[-1])
+        # self.output_shape = (16,16,filters[-1])
+        self.output_shape = (4,4,filters[-1])
         self.output_units = reduce(lambda x,y: x*y, self.output_shape)
 
     def forward(self,x):
@@ -48,6 +54,7 @@ class DecoderShallow(nn.Module):
         super().__init__()
         kernels = [3,5,7,7,7]
         assert len(filters) == len(kernels), "Number of filters and kernels in Decoder must be equal"
+        # log.info(f"Decoder filters: {filters}")
 
         dec = []
         # Construct decoder by layer blocks
@@ -68,7 +75,9 @@ class DecoderShallow(nn.Module):
         dec.append(nn.Sequential(*layer_list))
 
         self.decoder = nn.Sequential(*dec)
-        self.input_shape = (16,16,filters[0])
+        # self.input_shape = (16,16,filters[0])
+        # self.input_shape = (4,4,filters[0])
+        self.input_shape = (filters[0],4,4)
         self.input_units = reduce(lambda x,y: x*y, self.input_shape)
 
     def forward(self,x):

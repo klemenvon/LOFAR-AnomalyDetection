@@ -4,23 +4,27 @@
 project_name: 'lofar-ml'
 
 common:
-  data_dir: 'C:/LOFAR/subsubset/'
+  data_dir: 'C:/LOFAR/full/'
   device: 'cuda:0'
   gpus: 1
 
 data:
   data_dir: ${common.data_dir}
-  device: ${common.device}
+  device: cpu
+  # device: ${common.device}
   
 preproc:
   mode: 'patch'
-  size: (128,128)
+  size: [128,128]
   channels: 4
   device: ${common.device}
 
 loader:
   batch_size: 96
   shuffle: true
+  collate_fn: ${preproc.mode}
+  num_workers: 6
+  persistent_workers: true
 
 checkpoint:
   monitor: 'val_loss'
@@ -30,7 +34,7 @@ checkpoint:
   mode: 'min'
 
 model:
-  _target_: "src.model.basic_ae.Conv2DAutoEncoder"
+  _target_: "src.model.Conv2DAutoEncoder"
   encoder:
     _target_: "src.model.encoders_decoders.EncoderShallow"
     filters: [32,64,128,256,512]
@@ -44,6 +48,10 @@ model:
     mse: 1.0
 
 trainer:
-  max_epochs: 10
+  max_epochs: 50
   precision: 32
   accelerator: 'gpu'
+
+optimizer:
+  name: 'Adam'
+  lr: 0.001
