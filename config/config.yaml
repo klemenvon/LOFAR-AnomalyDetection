@@ -1,12 +1,12 @@
 # This is the base config for Hydra
 defaults:
   # - model: vanilla_ae
-  - model: swae
+  - model: vae
 
 project_name: 'lofar-ml'
 
 common:
-  data_dir: 'C:/LOFAR/full/'
+  data_dir: 'C:/LOFAR/subsubset/'
   device: 'cuda:0'
   gpus: 1
 

@@ -1,0 +1,13 @@
+_target_: "src.model.VAE"
+encoder:
+  _target_: "src.model.encoders_decoders.EncoderShallow"
+  filters: [32,64,128,256,512]
+  input_dim: ${preproc.channels}
+decoder:
+  _target_: "src.model.encoders_decoders.DecoderShallow"
+  filters: [512,256,128,64,32]
+  output_dim: ${preproc.channels}
+latent: 256
+loss_scaling:
+  mse_loss: 1.0
+  kld_loss: 0.05
